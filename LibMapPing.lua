@@ -1,18 +1,11 @@
-local LIB_IDENTIFIER = "LibMapPing"
+local libName, libVersion = "LibMapPing", 1300
 
 local lib
-if(not LibStub) then
-    lib = {}
-else
-    lib = LibStub:NewLibrary(LIB_IDENTIFIER, 999) -- only for test purposes. releases will get a smaller number
-    if not lib then
-        return -- already loaded and no upgrade necessary
-    end
-end
+lib = {}
 
 local logger
 if(LibDebugLogger) then
-    logger = LibDebugLogger.Create(LIB_IDENTIFIER)
+    logger = LibDebugLogger.Create(libName)
 else
     local function noop() end
     logger = setmetatable({}, { __index = function() return noop end })
@@ -196,7 +189,7 @@ local function HandleMapPing(eventCode, pingEventType, pingType, pingTag, x, y, 
 end
 
 local function HandleMapPingEventNotFired()
-    EVENT_MANAGER:UnregisterForUpdate(LIB_IDENTIFIER)
+    EVENT_MANAGER:UnregisterForUpdate(libName)
     for key, data in pairs(lib.pendingPing) do
         local pingEventType, pingType, x, y, zoneIndex = unpack(data)
         local pingTag = GetPingTagFromType(pingType)
@@ -214,8 +207,8 @@ end
 
 local function ResetEventWatchdog(key, ...)
     lib.pendingPing[key] = {...}
-    EVENT_MANAGER:UnregisterForUpdate(LIB_IDENTIFIER)
-    EVENT_MANAGER:RegisterForUpdate(LIB_IDENTIFIER, PING_EVENT_WATCHDOG_TIME, HandleMapPingEventNotFired)
+    EVENT_MANAGER:UnregisterForUpdate(libName)
+    EVENT_MANAGER:RegisterForUpdate(libName, PING_EVENT_WATCHDOG_TIME, HandleMapPingEventNotFired)
 end
 
 local function CustomPingMap(pingType, mapType, x, y)
@@ -416,8 +409,8 @@ function lib:UnregisterCallback(eventName, callback)
 end
 
 local function Unload()
-    EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED)
-    EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_MAP_PING)
+    EVENT_MANAGER:UnregisterForEvent(libName, EVENT_ADD_ON_LOADED)
+    EVENT_MANAGER:UnregisterForEvent(libName, EVENT_MAP_PING)
     PingMap = originalPingMap
     GetMapPlayerWaypoint = GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PLAYER_WAYPOINT]
     GetMapPing = GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PING]
@@ -449,12 +442,12 @@ local function Load()
     REMOVE_MAP_PING_FUNCTION[MAP_PIN_TYPE_PING] = CustomRemoveMapPing -- has no real api equivalent
     REMOVE_MAP_PING_FUNCTION[MAP_PIN_TYPE_RALLY_POINT] = CustomRemoveRallyPoint
 
-    EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(_, addonName)
+    EVENT_MANAGER:RegisterForEvent(libName, EVENT_ADD_ON_LOADED, function(_, addonName)
         if(addonName == "ZO_Ingame") then
-            EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED)
+            EVENT_MANAGER:UnregisterForEvent(libName, EVENT_ADD_ON_LOADED)
             -- don't let worldmap do anything as we manage it instead
             EVENT_MANAGER:UnregisterForEvent("ZO_WorldMap", EVENT_MAP_PING)
-            EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_MAP_PING, HandleMapPing)
+            EVENT_MANAGER:RegisterForEvent(libName, EVENT_MAP_PING, HandleMapPing)
         end
     end)
 
